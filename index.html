@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#003b70" />
+  <meta name="description" content="Sistema de reserva de ambientes escolares do SENAI Paulínia." />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/src/styles.css" />
+  <title>Reserva de Ambientes SENAI</title>
+</head>
+<body>
+  <header class="topbar no-print">
+    <div>
+      <p class="eyebrow">Escola SENAI Ricardo Figueiredo Terra — CFP 5.69</p>
+      <h1>Reserva de Ambientes</h1>
+    </div>
+    <button id="installButton" class="button secondary" hidden>Instalar aplicativo</button>
+  </header>
+
+  <nav class="tabs no-print" aria-label="Navegação principal">
+    <button class="tab active" data-view="dashboard">Painel</button>
+    <button class="tab" data-view="reservations">Reservas</button>
+    <button class="tab" data-view="new-reservation">Nova reserva</button>
+    <button class="tab" data-view="environments">Ambientes</button>
+    <button class="tab" data-view="print">Impressão mensal</button>
+  </nav>
+
+  <main class="container">
+    <section id="dashboard" class="view active">
+      <div class="section-heading">
+        <div><p class="eyebrow">Visão geral</p><h2>Painel de ocupação</h2></div>
+        <span id="todayLabel" class="badge"></span>
+      </div>
+      <div id="summaryCards" class="cards"></div>
+      <div class="panel">
+        <h3>Reservas de hoje</h3>
+        <div id="todayReservations"></div>
+      </div>
+    </section>
+
+    <section id="reservations" class="view">
+      <div class="section-heading"><div><p class="eyebrow">Consulta</p><h2>Reservas cadastradas</h2></div></div>
+      <div class="filters panel no-print">
+        <label>Mês<select id="filterMonth"></select></label>
+        <label>Ambiente<select id="filterEnvironment"><option value="">Todos</option></select></label>
+        <label>Turno<select id="filterShift"><option value="">Todos</option><option value="manha">Manhã</option><option value="tarde">Tarde</option><option value="noite">Noite</option></select></label>
+      </div>
+      <div id="reservationsTable" class="table-wrap"></div>
+    </section>
+
+    <section id="new-reservation" class="view">
+      <div class="section-heading"><div><p class="eyebrow">Cadastro</p><h2>Nova reserva</h2></div></div>
+      <form id="reservationForm" class="form-grid panel">
+        <label>Data<input type="date" name="date" required /></label>
+        <label>Ambiente<select name="environmentId" required></select></label>
+        <label>Turno<select name="shift" required><option value="manha">Manhã</option><option value="tarde">Tarde</option><option value="noite">Noite</option></select></label>
+        <label>Período<select name="period" required><option value="completo">Turno completo</option><option value="antes">Antes do intervalo</option><option value="apos">Após o intervalo</option></select></label>
+        <label>Professor<input name="teacher" maxlength="120" required /></label>
+        <label>Turma<input name="className" maxlength="80" required /></label>
+        <label>Unidade curricular<input name="curricularUnit" maxlength="150" required /></label>
+        <label>Atividade<input name="activity" maxlength="180" /></label>
+        <label class="full">Observações<textarea name="notes" rows="3" maxlength="500"></textarea></label>
+        <div id="formMessage" class="message full" role="alert"></div>
+        <div class="actions full"><button class="button primary" type="submit">Salvar reserva</button><button class="button secondary" type="reset">Limpar</button></div>
+      </form>
+    </section>
+
+    <section id="environments" class="view">
+      <div class="section-heading"><div><p class="eyebrow">Estrutura</p><h2>Ambientes escolares</h2></div></div>
+      <div id="environmentCards" class="cards environment-grid"></div>
+    </section>
+
+    <section id="print" class="view print-view">
+      <div class="print-controls panel no-print">
+        <label>Mês<select id="printMonth"></select></label>
+        <label>Ambiente<select id="printEnvironment"></select></label>
+        <button id="printButton" class="button primary" type="button">Imprimir agenda</button>
+      </div>
+      <article id="printSheet" class="print-sheet">
+        <header class="print-header">
+          <p>ESCOLA SENAI RICARDO FIGUEIREDO TERRA — CFP 5.69 — PAULÍNIA/SP</p>
+          <h2>AGENDA MENSAL DO AMBIENTE</h2>
+          <h3 id="printTitle"></h3>
+        </header>
+        <div id="printTable"></div>
+        <footer>Consulte a versão digital para verificar alterações posteriores à impressão.</footer>
+      </article>
+    </section>
+  </main>
+
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>
