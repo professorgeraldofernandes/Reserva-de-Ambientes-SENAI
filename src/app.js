@@ -1,18 +1,42 @@
 import { environments, institutionalEvents, months } from './data.js';
+import { loadImportedData } from './imported-data.js';
 
 const STORAGE_KEY = 'senai-reservas-v1';
+const SEED_VERSION_KEY = 'senai-reservas-seed-version';
+const SEED_VERSION = 'planilha-senai-2026-v1';
 const currentYear = 2026;
+const importedData = await loadImportedData();
+const calendarEvents = mergeCalendarEvents(institutionalEvents, importedData.events);
+
 const state = {
-  reservations: loadReservations(),
+  reservations: loadReservations(importedData.reservations),
   installPrompt: null
 };
 
-function loadReservations() {
+function mergeCalendarEvents(defaultEvents, importedEvents) {
+  const eventsByDate = new Map(defaultEvents.map((event) => [event.date, event]));
+  importedEvents.forEach((event) => eventsByDate.set(event.date, event));
+  return [...eventsByDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function loadReservations(seedReservations) {
+  let storedReservations = [];
+
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
+    storedReservations = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
   } catch {
-    return [];
+    storedReservations = [];
   }
+
+  if (localStorage.getItem(SEED_VERSION_KEY) !== SEED_VERSION) {
+    const manualReservations = storedReservations.filter((reservation) => !String(reservation.id).startsWith('imported-2026-'));
+    const mergedReservations = [...seedReservations, ...manualReservations];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedReservations));
+    localStorage.setItem(SEED_VERSION_KEY, SEED_VERSION);
+    return mergedReservations;
+  }
+
+  return storedReservations;
 }
 
 function saveReservations() {
@@ -85,7 +109,7 @@ function renderDashboard() {
 }
 
 function reservationTable(reservations, allowDelete = false) {
-  const rows = reservations
+  const rows = [...reservations]
     .sort((a, b) => `${a.date}${a.shift}`.localeCompare(`${b.date}${b.shift}`))
     .map((item) => `<tr>
       <td>${formatDate(item.date)}</td>
@@ -127,7 +151,6 @@ function renderEnvironments() {
 function renderPrint() {
   const month = Number(document.querySelector('#printMonth').value);
   const environmentId = document.querySelector('#printEnvironment').value;
-  const environment = environments.find((item) => item.id === environmentId);
   const daysInMonth = new Date(currentYear, month, 0).getDate();
 
   document.querySelector('#printTitle').textContent = `${months[month - 1]} de ${currentYear} — ${environmentName(environmentId)}`;
@@ -136,9 +159,12 @@ function renderPrint() {
     const day = index + 1;
     const date = `${currentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
-    const event = institutionalEvents.find((item) => item.date === date)?.name ?? '';
+    const event = calendarEvents.find((item) => item.date === date)?.name ?? '';
     const reservations = state.reservations.filter((item) => item.date === date && item.environmentId === environmentId);
-    const content = (shift) => reservations.filter((item) => item.shift === shift).map((item) => `<strong>${item.teacher}</strong><br>${item.className}<br><small>${item.curricularUnit} — ${periodLabel(item.period)}</small>`).join('<hr>');
+    const content = (shift) => reservations
+      .filter((item) => item.shift === shift)
+      .map((item) => `<strong>${item.teacher}</strong><br>${item.className}<br><small>${item.curricularUnit} — ${periodLabel(item.period)}</small>`)
+      .join('<hr>');
     return `<tr class="${event ? 'event-day' : ''}"><td>${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}</td><td>${weekday}</td><td>${event}</td><td>${content('manha')}</td><td>${content('tarde')}</td><td>${content('noite')}</td></tr>`;
   }).join('');
 
@@ -187,7 +213,7 @@ function setupNavigation() {
 }
 
 function setupPwa() {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     state.installPrompt = event;
