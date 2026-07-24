@@ -1,0 +1,11 @@
+{
+  "name": "Reserva de Ambientes SENAI",
+  "short_name": "Reservas SENAI",
+  "description": "Gestão e consulta de reservas de ambientes escolares.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f6f9",
+  "theme_color": "#003b70",
+  "lang": "pt-BR",
+  "icons": []
+}
