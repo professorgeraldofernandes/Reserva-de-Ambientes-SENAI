@@ -33,8 +33,10 @@ jobs:
       - name: Gerar versão de produção
         run: npm run build
 
-      - name: Configurar GitHub Pages
+      - name: Configurar e habilitar GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Enviar artefato
         uses: actions/upload-pages-artifact@v3
