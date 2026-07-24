@@ -3,6 +3,7 @@ name: Publicar aplicação no GitHub Pages
 on:
   push:
     branches:
+      - main
       - agent/mvp-reserva-ambientes
   workflow_dispatch:
 
