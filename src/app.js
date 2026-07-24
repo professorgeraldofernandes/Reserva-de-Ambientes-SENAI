@@ -3,15 +3,24 @@ import { loadImportedData } from './imported-data.js';
 
 const STORAGE_KEY = 'senai-reservas-v1';
 const SEED_VERSION_KEY = 'senai-reservas-seed-version';
-const SEED_VERSION = 'planilha-senai-2026-v1';
+const SEED_VERSION = 'planilha-senai-2026-v2';
 const currentYear = 2026;
-const importedData = await loadImportedData();
-const calendarEvents = mergeCalendarEvents(institutionalEvents, importedData.events);
+
+let calendarEvents = [...institutionalEvents];
 
 const state = {
-  reservations: loadReservations(importedData.reservations),
-  installPrompt: null
+  reservations: readStoredReservations(),
+  installPrompt: null,
+  importStatus: 'loading'
 };
+
+function readStoredReservations() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
+  } catch {
+    return [];
+  }
+}
 
 function mergeCalendarEvents(defaultEvents, importedEvents) {
   const eventsByDate = new Map(defaultEvents.map((event) => [event.date, event]));
@@ -19,17 +28,13 @@ function mergeCalendarEvents(defaultEvents, importedEvents) {
   return [...eventsByDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function loadReservations(seedReservations) {
-  let storedReservations = [];
-
-  try {
-    storedReservations = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
-  } catch {
-    storedReservations = [];
-  }
+function mergeImportedReservations(seedReservations) {
+  const storedReservations = readStoredReservations();
 
   if (localStorage.getItem(SEED_VERSION_KEY) !== SEED_VERSION) {
-    const manualReservations = storedReservations.filter((reservation) => !String(reservation.id).startsWith('imported-2026-'));
+    const manualReservations = storedReservations.filter(
+      (reservation) => !String(reservation.id).startsWith('imported-2026-')
+    );
     const mergedReservations = [...seedReservations, ...manualReservations];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedReservations));
     localStorage.setItem(SEED_VERSION_KEY, SEED_VERSION);
@@ -37,6 +42,20 @@ function loadReservations(seedReservations) {
   }
 
   return storedReservations;
+}
+
+async function bootstrapImportedData() {
+  try {
+    const importedData = await loadImportedData();
+    calendarEvents = mergeCalendarEvents(institutionalEvents, importedData.events);
+    state.reservations = mergeImportedReservations(importedData.reservations);
+    state.importStatus = 'ready';
+  } catch (error) {
+    console.error('Falha ao carregar os dados importados da planilha:', error);
+    state.importStatus = 'error';
+  } finally {
+    renderAll();
+  }
 }
 
 function saveReservations() {
@@ -98,14 +117,14 @@ function renderDashboard() {
   document.querySelector('#todayLabel').textContent = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date());
   document.querySelector('#summaryCards').innerHTML = [
     ['Ambientes', environments.length],
-    ['Reservas cadastradas', state.reservations.length],
+    ['Reservas cadastradas', state.importStatus === 'loading' ? 'Carregando…' : state.reservations.length],
     ['Ocupados hoje', occupied],
     ['Disponíveis hoje', environments.length - occupied]
   ].map(([label, value]) => `<article class="metric-card"><span>${label}</span><strong>${value}</strong></article>`).join('');
 
   document.querySelector('#todayReservations').innerHTML = todayReservations.length
     ? reservationTable(todayReservations)
-    : '<p class="empty-state">Não há reservas cadastradas para hoje.</p>';
+    : `<p class="empty-state">${state.importStatus === 'loading' ? 'Carregando reservas da planilha…' : 'Não há reservas cadastradas para hoje.'}</p>`;
 }
 
 function reservationTable(reservations, allowDelete = false) {
@@ -135,7 +154,7 @@ function renderReservations() {
 
   document.querySelector('#reservationsTable').innerHTML = filtered.length
     ? reservationTable(filtered, true)
-    : '<p class="empty-state">Nenhuma reserva encontrada para os filtros selecionados.</p>';
+    : `<p class="empty-state">${state.importStatus === 'loading' ? 'Carregando reservas da planilha…' : 'Nenhuma reserva encontrada para os filtros selecionados.'}</p>`;
 }
 
 function renderEnvironments() {
@@ -205,25 +224,39 @@ function handleDelete(event) {
 
 function setupNavigation() {
   document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab, .view').forEach((element) => element.classList.remove('active'));
+    const targetView = document.querySelector(`#${tab.dataset.view}`);
+    if (!targetView) return;
+
+    document.querySelectorAll('.tab').forEach((element) => element.classList.remove('active'));
+    document.querySelectorAll('.view').forEach((element) => element.classList.remove('active'));
     tab.classList.add('active');
-    document.querySelector(`#${tab.dataset.view}`).classList.add('active');
+    targetView.classList.add('active');
     if (tab.dataset.view === 'print') renderPrint();
   }));
 }
 
 function setupPwa() {
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch((error) => {
+      console.warn('Service Worker não registrado:', error);
+    });
+  }
+
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     state.installPrompt = event;
-    document.querySelector('#installButton').hidden = false;
+    const installButton = document.querySelector('#installButton');
+    if (installButton) installButton.hidden = false;
   });
-  document.querySelector('#installButton').addEventListener('click', async () => {
-    await state.installPrompt?.prompt();
-    state.installPrompt = null;
-    document.querySelector('#installButton').hidden = true;
-  });
+
+  const installButton = document.querySelector('#installButton');
+  if (installButton) {
+    installButton.addEventListener('click', async () => {
+      await state.installPrompt?.prompt();
+      state.installPrompt = null;
+      installButton.hidden = true;
+    });
+  }
 }
 
 function renderAll() {
@@ -238,8 +271,12 @@ setupNavigation();
 setupPwa();
 renderAll();
 
-document.querySelector('#reservationForm').addEventListener('submit', handleReservationSubmit);
-document.querySelector('#reservationsTable').addEventListener('click', handleDelete);
+const reservationForm = document.querySelector('#reservationForm');
+if (reservationForm) reservationForm.addEventListener('submit', handleReservationSubmit);
+
+document.querySelector('#reservationsTable')?.addEventListener('click', handleDelete);
 document.querySelectorAll('#filterMonth, #filterEnvironment, #filterShift').forEach((element) => element.addEventListener('change', renderReservations));
 document.querySelectorAll('#printMonth, #printEnvironment').forEach((element) => element.addEventListener('change', renderPrint));
-document.querySelector('#printButton').addEventListener('click', () => window.print());
+document.querySelector('#printButton')?.addEventListener('click', () => window.print());
+
+bootstrapImportedData();
