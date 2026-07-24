@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - agent/mvp-reserva-ambientes
   workflow_dispatch:
 
 permissions:
@@ -27,7 +26,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Instalar dependências
         run: npm install
