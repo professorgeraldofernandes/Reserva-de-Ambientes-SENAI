@@ -15,7 +15,7 @@ export const environments = [
   { id: 'c-14-informatica', code: 'C-14', name: 'Laboratório de Informática', category: 'Informática', block: 'C', capacity: 32, computers: 16 },
   { id: 'c-17-informatica', code: 'C-17', name: 'Laboratório de Informática', category: 'Informática', block: 'C', capacity: 28, computers: 14 },
   { id: 'c-16-metrologia', code: 'C-16', name: 'Laboratório de Metrologia', category: 'Laboratório', block: 'C', capacity: 20, computers: 0 },
-  { id: 'r2-08-clp', code: 'R2-08', name: 'Laboratório de CLP e Redes', category: 'Laboratório', block: 'R2', capacity: 40, computers: 20 },
+  { id: 'r1-08-clp', code: 'R1-08', name: 'Laboratório de CLP e Redes', category: 'Laboratório', block: 'R1', capacity: 40, computers: 20 },
   { id: 'c-09-automacao-hidraulica', code: 'C-09', name: 'Laboratório de Automação Hidráulica', category: 'Laboratório', block: 'C', capacity: 16, computers: 0 },
   { id: 'oficina-comandos-eletricos', code: 'OF-CE', name: 'Oficina de Comandos Elétricos', category: 'Oficina', block: 'Oficinas', capacity: 20, computers: 0 },
   { id: 'oficina-instalacoes-eletricas', code: 'OF-IE', name: 'Oficina de Instalações Elétricas', category: 'Oficina', block: 'Oficinas', capacity: 20, computers: 0 },
