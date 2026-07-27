@@ -1,5 +1,5 @@
 const BASE_PATH = '/Reserva-de-Ambientes-SENAI/';
-const CACHE_NAME = 'reservas-senai-v3';
+const CACHE_NAME = 'reservas-senai-v4';
 const APP_SHELL = [
   BASE_PATH,
   `${BASE_PATH}index.html`,
@@ -37,11 +37,13 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-      if (!response || response.status !== 200 || response.type === 'opaque') return response;
-      const clone = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-      return response;
-    }))
+    fetch(event.request)
+      .then((response) => {
+        if (!response || response.status !== 200 || response.type === 'opaque') return response;
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
