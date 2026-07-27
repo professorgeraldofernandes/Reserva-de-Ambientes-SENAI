@@ -2,25 +2,25 @@
 @media(max-width:900px){.cards,.environment-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.filters,.print-controls,.form-grid{grid-template-columns:1fr}.topbar{padding:1rem}.tabs{padding:.6rem 1rem}.container{width:min(100% - 1rem,1400px)}}@media(max-width:560px){.cards,.environment-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:1rem}.topbar h1{font-size:1.3rem}}
 @media print{
   @page{size:A4 portrait;margin:5mm}
-  html,body{width:210mm;height:297mm;margin:0!important;padding:0!important;background:#fff!important}
-  body{overflow:hidden}
+  html,body{width:200mm;height:287mm;margin:0!important;padding:0!important;background:#fff!important}
+  body{overflow:hidden!important}
   .no-print{display:none!important}
-  .container{width:100%!important;height:287mm!important;margin:0!important;padding:0!important;overflow:hidden!important}
+  .container{width:200mm!important;height:287mm!important;margin:0 auto!important;padding:0!important;overflow:hidden!important}
   .view{display:none!important}
-  .print-view{display:block!important;width:100%!important;height:287mm!important;margin:0!important;padding:0!important;overflow:hidden!important}
-  .print-sheet{width:100%!important;height:287mm!important;max-height:287mm!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important;page-break-inside:avoid!important;break-inside:avoid-page!important;page-break-after:avoid!important}
-  .print-header{height:18mm;margin:0 0 1.5mm!important;padding:0!important;text-align:center;overflow:hidden}
-  .print-header p{margin:0 0 1.2mm!important;font-size:7pt!important;line-height:1!important}
-  .print-header h2{margin:0 0 1.2mm!important;font-size:12pt!important;line-height:1!important;color:#003b70!important}
-  .print-header h3{margin:0!important;font-size:9pt!important;line-height:1.05!important}
-  #printTable{width:100%!important;margin:0!important;padding:0!important;overflow:hidden!important}
-  #printTable table{width:100%!important;table-layout:fixed!important;border-collapse:collapse!important;font-size:6.5pt!important;line-height:1.05!important;page-break-inside:avoid!important;break-inside:avoid-page!important}
+  .print-view{display:block!important;width:190mm!important;height:287mm!important;margin:0 auto!important;padding:0!important;overflow:hidden!important}
+  .print-sheet{width:190mm!important;height:287mm!important;max-height:287mm!important;margin:0 auto!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important;page-break-inside:avoid!important;break-inside:avoid-page!important;page-break-after:avoid!important}
+  .print-header{height:19mm;margin:0 0 1.5mm!important;padding:0!important;text-align:center!important;overflow:hidden}
+  .print-header p{margin:0 0 1.2mm!important;font-size:8pt!important;line-height:1!important;text-align:center!important}
+  .print-header h2{margin:0 0 1.2mm!important;font-size:14pt!important;line-height:1!important;color:#003b70!important;text-align:center!important}
+  .print-header h3{margin:0!important;font-size:10pt!important;line-height:1.05!important;text-align:center!important}
+  #printTable{width:190mm!important;margin:0 auto!important;padding:0!important;overflow:hidden!important}
+  #printTable table{width:190mm!important;margin:0 auto!important;table-layout:fixed!important;border-collapse:collapse!important;font-size:6.5pt!important;line-height:1.05!important;page-break-inside:avoid!important;break-inside:avoid-page!important}
   #printTable thead{display:table-header-group}
   #printTable tbody{display:table-row-group}
-  #printTable tr{height:7.8mm!important;max-height:7.8mm!important;page-break-inside:avoid!important;break-inside:avoid!important}
-  #printTable th,#printTable td{padding:.55mm .75mm!important;border:.2mm solid #777!important;vertical-align:top!important;overflow:hidden!important;word-break:break-word!important;hyphens:auto!important}
-  #printTable th{height:5mm!important;background:#dbe8f3!important;color:#000!important;font-size:6.6pt!important;line-height:1!important;text-transform:uppercase!important;letter-spacing:0!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}
-  #printTable td{font-size:6.4pt!important;line-height:1.05!important}
+  #printTable tr{height:7.65mm!important;max-height:7.65mm!important;page-break-inside:avoid!important;break-inside:avoid!important}
+  #printTable th,#printTable td{padding:.55mm .75mm!important;border:.2mm solid #777!important;overflow:hidden!important;word-break:break-word!important;hyphens:auto!important}
+  #printTable th{height:6mm!important;background:#dbe8f3!important;color:#000!important;font-size:14px!important;line-height:1!important;font-weight:700!important;text-align:center!important;vertical-align:middle!important;text-transform:uppercase!important;letter-spacing:0!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}
+  #printTable td{font-size:6.4pt!important;line-height:1.05!important;vertical-align:top!important}
   #printTable td strong{font-size:6.6pt!important;line-height:1!important}
   #printTable td small{font-size:5.5pt!important;line-height:1!important;color:#4d6170!important}
   #printTable th:nth-child(1),#printTable td:nth-child(1){width:8%!important;white-space:nowrap!important}
