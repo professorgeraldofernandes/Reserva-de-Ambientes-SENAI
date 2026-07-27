@@ -43,6 +43,8 @@ const EVENTS = [
 
 const EVENT_DATES = new Set(EVENTS.map(([date]) => date));
 const FULL_OCCUPANCY_ENVIRONMENTS = new Set(['r2-16-informatica', 'c-14-informatica']);
+const SCHEDULE_MIGRATION_KEY = 'senai-agenda-recorrente-versao';
+const SCHEDULE_MIGRATION_VERSION = '2026-jul-dez-v1';
 
 function dateValue(month, day) {
   return `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -197,7 +199,17 @@ function generateReservations() {
   return reservations;
 }
 
+function forceOneTimeScheduleRefresh() {
+  if (typeof localStorage === 'undefined') return;
+  if (localStorage.getItem(SCHEDULE_MIGRATION_KEY) === SCHEDULE_MIGRATION_VERSION) return;
+
+  localStorage.removeItem('senai-reservas-seed-version');
+  localStorage.setItem(SCHEDULE_MIGRATION_KEY, SCHEDULE_MIGRATION_VERSION);
+}
+
 export async function loadImportedData() {
+  forceOneTimeScheduleRefresh();
+
   return {
     reservations: generateReservations(),
     events: EVENTS.map(([date, name]) => ({ date, name }))
