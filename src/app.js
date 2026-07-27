@@ -3,8 +3,10 @@ import { loadImportedData } from './imported-data.js';
 
 const STORAGE_KEY = 'senai-reservas-v1';
 const SEED_VERSION_KEY = 'senai-reservas-seed-version';
-const SEED_VERSION = 'planilha-senai-2026-v2';
+const SEED_VERSION = 'planilha-senai-2026-v3';
 const currentYear = 2026;
+const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const shiftOrder = { manha: 1, tarde: 2, noite: 3 };
 
 let calendarEvents = [...institutionalEvents];
 
@@ -20,6 +22,15 @@ function readStoredReservations() {
   } catch {
     return [];
   }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 function mergeCalendarEvents(defaultEvents, importedEvents) {
@@ -79,6 +90,10 @@ function shiftLabel(shift) {
   return { manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' }[shift] ?? shift;
 }
 
+function shiftAbbreviation(shift) {
+  return { manha: 'M', tarde: 'T', noite: 'N' }[shift] ?? '?';
+}
+
 function overlaps(a, b) {
   if (a === 'completo' || b === 'completo') return true;
   return a === b;
@@ -134,8 +149,8 @@ function reservationTable(reservations, allowDelete = false) {
       <td>${formatDate(item.date)}</td>
       <td>${environmentName(item.environmentId)}</td>
       <td>${shiftLabel(item.shift)}<br><small>${periodLabel(item.period)}</small></td>
-      <td><strong>${item.teacher}</strong><br><small>${item.className} — ${item.curricularUnit}</small></td>
-      <td>${item.activity || '—'}</td>
+      <td><strong>${escapeHtml(item.teacher)}</strong><br><small>${escapeHtml(item.className)} — ${escapeHtml(item.curricularUnit)}</small></td>
+      <td>${escapeHtml(item.activity || '—')}</td>
       ${allowDelete ? `<td><button class="icon-button danger" data-delete="${item.id}">Excluir</button></td>` : ''}
     </tr>`).join('');
 
@@ -167,27 +182,85 @@ function renderEnvironments() {
   `).join('');
 }
 
+function reservationMainText(reservation) {
+  const activity = String(reservation.activity ?? '').trim();
+  const genericActivity = activity.toLocaleLowerCase('pt-BR').includes('demonstração');
+
+  if (activity && !genericActivity) return activity;
+  return reservation.curricularUnit || reservation.className || 'Reserva confirmada';
+}
+
+function calendarResponsible(reservations) {
+  const names = [...new Set(reservations.map((item) => String(item.teacher ?? '').trim()).filter(Boolean))];
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return names.join(' / ');
+  return 'Múltiplos';
+}
+
+function calendarReservationBlock(reservation) {
+  return `<div class="calendar-reservation calendar-${reservation.shift}">
+    <span class="calendar-shift" title="${escapeHtml(shiftLabel(reservation.shift))}">${shiftAbbreviation(reservation.shift)}</span>
+    <div class="calendar-reservation-text">
+      <strong>${escapeHtml(reservationMainText(reservation))}</strong>
+      <small>${escapeHtml(reservation.className || reservation.curricularUnit || '')} · ${escapeHtml(periodLabel(reservation.period))}</small>
+    </div>
+  </div>`;
+}
+
 function renderPrint() {
   const month = Number(document.querySelector('#printMonth').value);
   const environmentId = document.querySelector('#printEnvironment').value;
-  const daysInMonth = new Date(currentYear, month, 0).getDate();
+  const daysInMonth = new Date(Date.UTC(currentYear, month, 0)).getUTCDate();
+  const firstWeekDay = new Date(Date.UTC(currentYear, month - 1, 1)).getUTCDay();
 
   document.querySelector('#printTitle').textContent = `${months[month - 1]} de ${currentYear} — ${environmentName(environmentId)}`;
 
-  const rows = Array.from({ length: daysInMonth }, (_, index) => {
-    const day = index + 1;
+  const weekDayHeader = weekDays
+    .map((day) => `<div class="calendar-weekday">${day}</div>`)
+    .join('');
+
+  const cells = Array.from({ length: 42 }, (_, cellIndex) => {
+    const day = cellIndex - firstWeekDay + 1;
+    if (day < 1 || day > daysInMonth) {
+      return '<div class="calendar-day calendar-outside" aria-hidden="true"></div>';
+    }
+
     const date = `${currentYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
-    const event = calendarEvents.find((item) => item.date === date)?.name ?? '';
-    const reservations = state.reservations.filter((item) => item.date === date && item.environmentId === environmentId);
-    const content = (shift) => reservations
-      .filter((item) => item.shift === shift)
-      .map((item) => `<strong>${item.teacher}</strong><br>${item.className}<br><small>${item.curricularUnit} — ${periodLabel(item.period)}</small>`)
-      .join('<hr>');
-    return `<tr class="${event ? 'event-day' : ''}"><td>${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}</td><td>${weekday}</td><td>${event}</td><td>${content('manha')}</td><td>${content('tarde')}</td><td>${content('noite')}</td></tr>`;
+    const event = calendarEvents.find((item) => item.date === date);
+    const reservations = state.reservations
+      .filter((item) => item.date === date && item.environmentId === environmentId)
+      .sort((a, b) => (shiftOrder[a.shift] ?? 99) - (shiftOrder[b.shift] ?? 99));
+
+    const isWeekend = cellIndex % 7 === 0 || cellIndex % 7 === 6;
+    const isFullOccupancy = reservations.some((item) =>
+      item.className === 'Lotação máxima' || String(item.activity).toLocaleLowerCase('pt-BR').includes('ocupação máxima')
+    );
+    const classes = [
+      'calendar-day',
+      isWeekend ? 'calendar-weekend' : '',
+      event ? 'calendar-event-day' : '',
+      reservations.length ? 'calendar-occupied' : '',
+      isFullOccupancy ? 'calendar-full-occupancy' : ''
+    ].filter(Boolean).join(' ');
+
+    const responsible = calendarResponsible(reservations);
+    const reservationBlocks = reservations.map(calendarReservationBlock).join('');
+
+    return `<div class="${classes}" aria-label="Dia ${day}${responsible ? `, reservado por ${escapeHtml(responsible)}` : ''}">
+      <div class="calendar-day-header">
+        <span class="calendar-day-number">${day}</span>
+        <span class="calendar-responsible" title="${escapeHtml(responsible)}">${escapeHtml(responsible)}</span>
+      </div>
+      ${event ? `<div class="calendar-event-label">${escapeHtml(event.name)}</div>` : ''}
+      <div class="calendar-day-content">${reservationBlocks || '<span class="calendar-free">Livre</span>'}</div>
+    </div>`;
   }).join('');
 
-  document.querySelector('#printTable').innerHTML = `<table><thead><tr><th>Data</th><th>Dia</th><th>Evento</th><th>Manhã</th><th>Tarde</th><th>Noite</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.querySelector('#printCalendar').innerHTML = `
+    <div class="calendar-weekdays">${weekDayHeader}</div>
+    <div class="calendar-grid">${cells}</div>
+  `;
 }
 
 function handleReservationSubmit(event) {
