@@ -3,7 +3,7 @@ const ENVIRONMENT_IDS = [
   'r2-05-sala', 'r2-08-sala', 'r2-09-sala', 'r2-17-sala',
   'c-10-sala', 'c-11-sala', 'c-18-sala', 'c-21-sala',
   'r2-16-informatica', 'c-14-informatica', 'c-17-informatica',
-  'c-16-metrologia', 'r2-08-clp', 'c-09-automacao-hidraulica',
+  'c-16-metrologia', 'r1-08-clp', 'c-09-automacao-hidraulica',
   'oficina-comandos-eletricos', 'oficina-instalacoes-eletricas',
   'c-09-hidropneumatica', 'r2-24-hidropneumatica', 'c-15-eletronica',
   'auditorio', 'biblioteca'
@@ -41,11 +41,45 @@ const EVENTS = [
   ['2026-12-30', 'Ponte de Feriado'], ['2026-12-31', 'Ponte de Feriado']
 ];
 
+const EVENT_DATES = new Set(EVENTS.map(([date]) => date));
+const FULL_OCCUPANCY_ENVIRONMENTS = new Set(['r2-16-informatica', 'c-14-informatica']);
+
 function dateValue(month, day) {
   return `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function makeReservation(id, date, environmentId, shift, period, teacher, className, curricularUnit) {
+function formatIsoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function forEachDate(startDate, endDate, callback) {
+  const current = new Date(`${startDate}T12:00:00Z`);
+  const end = new Date(`${endDate}T12:00:00Z`);
+
+  while (current <= end) {
+    callback(new Date(current));
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+}
+
+function isBusinessDay(date) {
+  const weekday = date.getUTCDay();
+  const isoDate = formatIsoDate(date);
+  return weekday >= 1 && weekday <= 5 && !EVENT_DATES.has(isoDate);
+}
+
+function makeReservation(
+  id,
+  date,
+  environmentId,
+  shift,
+  period,
+  teacher,
+  className,
+  curricularUnit,
+  activity = 'Reserva importada para demonstração',
+  notes = 'Base provisória para validação do sistema online.'
+) {
   return {
     id,
     date,
@@ -55,12 +89,70 @@ function makeReservation(id, date, environmentId, shift, period, teacher, classN
     teacher,
     className,
     curricularUnit,
-    activity: 'Reserva importada para demonstração',
-    notes: 'Base provisória para validação do sistema online.',
+    activity,
+    notes,
     source: 'demonstracao-2026',
     status: 'confirmada',
     createdAt: '2026-01-01T00:00:00.000Z'
   };
+}
+
+function addFullOccupancyReservations(reservations, nextId) {
+  const shifts = ['manha', 'tarde', 'noite'];
+
+  forEachDate('2026-07-01', '2026-08-31', (date) => {
+    if (!isBusinessDay(date)) return;
+
+    const isoDate = formatIsoDate(date);
+    FULL_OCCUPANCY_ENVIRONMENTS.forEach((environmentId) => {
+      shifts.forEach((shift) => {
+        reservations.push(makeReservation(
+          `imported-2026-full-${nextId.value++}`,
+          isoDate,
+          environmentId,
+          shift,
+          'completo',
+          'Reserva institucional',
+          'Lotação máxima',
+          'Uso integral do ambiente',
+          'Ocupação máxima do laboratório',
+          'Reserva de demonstração para ocupação máxima em julho e agosto.'
+        ));
+      });
+    });
+  });
+}
+
+function addClpRecurringReservations(reservations, nextId) {
+  forEachDate('2026-07-01', '2026-12-17', (date) => {
+    if (!isBusinessDay(date)) return;
+
+    const weekday = date.getUTCDay();
+    const teacher = weekday === 1 || weekday === 3 ? 'Fernandes' : 'Francisco';
+
+    reservations.push(makeReservation(
+      `imported-2026-clp-${nextId.value++}`,
+      formatIsoDate(date),
+      'r1-08-clp',
+      'tarde',
+      'completo',
+      teacher,
+      'Reserva recorrente',
+      'Laboratório de CLP e Redes',
+      'Uso recorrente do laboratório',
+      weekday === 1 || weekday === 3
+        ? 'Segundas e quartas reservadas para Fernandes.'
+        : 'Terças, quintas e sextas reservadas para Francisco.'
+    ));
+  });
+}
+
+function shouldSkipGenericReservation(environmentId, month) {
+  if (FULL_OCCUPANCY_ENVIRONMENTS.has(environmentId) && (month === 7 || month === 8)) {
+    return true;
+  }
+
+  return environmentId === 'r1-08-clp' && month >= 7;
 }
 
 function generateReservations() {
@@ -71,10 +163,12 @@ function generateReservations() {
     makeReservation('imported-2026-real-4', '2026-01-15', 'r1-12-sala', 'noite', 'completo', 'FERNANDO TEC. MEC.', 'Registro da planilha', 'SALAS R1')
   ];
 
-  let sequence = 5;
+  const nextId = { value: 5 };
 
   for (let month = 1; month <= 12; month += 1) {
     ENVIRONMENT_IDS.forEach((environmentId, environmentIndex) => {
+      if (shouldSkipGenericReservation(environmentId, month)) return;
+
       for (let occurrence = 0; occurrence < 3; occurrence += 1) {
         const day = 1 + ((environmentIndex * 3 + month * 2 + occurrence * 8) % 27);
         const shift = ['manha', 'tarde', 'noite'][(environmentIndex + month + occurrence) % 3];
@@ -84,7 +178,7 @@ function generateReservations() {
         const curricularUnit = UNITS[(environmentIndex + occurrence) % UNITS.length];
 
         reservations.push(makeReservation(
-          `imported-2026-demo-${sequence}`,
+          `imported-2026-demo-${nextId.value++}`,
           dateValue(month, day),
           environmentId,
           shift,
@@ -93,10 +187,12 @@ function generateReservations() {
           className,
           curricularUnit
         ));
-        sequence += 1;
       }
     });
   }
+
+  addFullOccupancyReservations(reservations, nextId);
+  addClpRecurringReservations(reservations, nextId);
 
   return reservations;
 }
