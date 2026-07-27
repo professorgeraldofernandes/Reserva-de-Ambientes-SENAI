@@ -75,15 +75,15 @@
       <div class="print-controls panel no-print">
         <label>Mês<select id="printMonth"></select></label>
         <label>Ambiente<select id="printEnvironment"></select></label>
-        <button id="printButton" class="button primary" type="button">Imprimir agenda</button>
+        <button id="printButton" class="button primary" type="button">Imprimir calendário</button>
       </div>
-      <article id="printSheet" class="print-sheet">
+      <article id="printSheet" class="print-sheet calendar-sheet">
         <header class="print-header">
           <p>ESCOLA SENAI RICARDO FIGUEIREDO TERRA — CFP 5.69 — PAULÍNIA/SP</p>
-          <h2>AGENDA MENSAL DO AMBIENTE</h2>
+          <h2>CALENDÁRIO MENSAL DE RESERVAS</h2>
           <h3 id="printTitle"></h3>
         </header>
-        <div id="printTable"></div>
+        <div id="printCalendar" class="calendar-container" aria-live="polite"></div>
         <footer>Consulte a versão digital para verificar alterações posteriores à impressão.</footer>
       </article>
     </section>
