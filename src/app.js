@@ -5,7 +5,26 @@ const STORAGE_KEY = 'senai-reservas-v1';
 const SEED_VERSION_KEY = 'senai-reservas-seed-version';
 const SEED_VERSION = 'planilha-senai-2026-v3';
 const currentYear = 2026;
-const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const calendarWeekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const weeklyDays = [
+  { label: 'SEG', day: 1 },
+  { label: 'TER', day: 2 },
+  { label: 'QUA', day: 3 },
+  { label: 'QUI', day: 4 },
+  { label: 'SEX', day: 5 },
+  { label: 'SÁB', day: 6 }
+];
+const weeklyRows = [
+  { shift: 'manha', period: 'antes', label: 'MANHÃ', tone: 'morning' },
+  { interval: true, label: 'INTERVALO', tone: 'morning' },
+  { shift: 'manha', period: 'apos', label: 'MANHÃ', tone: 'morning' },
+  { shift: 'tarde', period: 'antes', label: 'TARDE', tone: 'afternoon' },
+  { interval: true, label: 'INTERVALO', tone: 'afternoon' },
+  { shift: 'tarde', period: 'apos', label: 'TARDE', tone: 'afternoon' },
+  { shift: 'noite', period: 'antes', label: 'NOITE', tone: 'night' },
+  { interval: true, label: 'INTERVALO', tone: 'night' },
+  { shift: 'noite', period: 'apos', label: 'NOITE', tone: 'night' }
+];
 const shiftOrder = { manha: 1, tarde: 2, noite: 3 };
 
 let calendarEvents = [...institutionalEvents];
@@ -190,6 +209,22 @@ function reservationMainText(reservation) {
   return reservation.curricularUnit || reservation.className || 'Reserva confirmada';
 }
 
+function isFullOccupancy(reservation) {
+  return reservation.className === 'Lotação máxima' ||
+    String(reservation.activity ?? '').toLocaleLowerCase('pt-BR').includes('ocupação máxima');
+}
+
+function setPrintPage(format) {
+  document.documentElement.dataset.printFormat = format;
+  let style = document.querySelector('#dynamicPrintPageStyle');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'dynamicPrintPageStyle';
+    document.head.appendChild(style);
+  }
+  style.textContent = `@media print { @page { size: A4 ${format === 'weekly' ? 'landscape' : 'portrait'}; margin: 5mm; } }`;
+}
+
 function calendarResponsible(reservations) {
   const names = [...new Set(reservations.map((item) => String(item.teacher ?? '').trim()).filter(Boolean))];
   if (names.length === 0) return '';
@@ -208,19 +243,23 @@ function calendarReservationBlock(reservation) {
   </div>`;
 }
 
-function renderPrint() {
-  const month = Number(document.querySelector('#printMonth').value);
-  const environmentId = document.querySelector('#printEnvironment').value;
+function renderCalendarPrint(month, environmentId) {
   const daysInMonth = new Date(Date.UTC(currentYear, month, 0)).getUTCDate();
   const firstWeekDay = new Date(Date.UTC(currentYear, month - 1, 1)).getUTCDay();
+  const weekCount = Math.ceil((firstWeekDay + daysInMonth) / 7);
+  const sheet = document.querySelector('#printSheet');
+  const content = document.querySelector('#printContent');
 
-  document.querySelector('#printTitle').textContent = `${months[month - 1]} de ${currentYear} — ${environmentName(environmentId)}`;
+  setPrintPage('calendar');
+  sheet.className = 'print-sheet calendar-sheet';
+  document.querySelector('#printHeading').textContent = 'CALENDÁRIO MENSAL DE RESERVAS';
+  content.style.setProperty('--calendar-weeks', String(weekCount));
 
-  const weekDayHeader = weekDays
+  const weekDayHeader = calendarWeekDays
     .map((day) => `<div class="calendar-weekday">${day}</div>`)
     .join('');
 
-  const cells = Array.from({ length: 42 }, (_, cellIndex) => {
+  const cells = Array.from({ length: weekCount * 7 }, (_, cellIndex) => {
     const day = cellIndex - firstWeekDay + 1;
     if (day < 1 || day > daysInMonth) {
       return '<div class="calendar-day calendar-outside" aria-hidden="true"></div>';
@@ -233,15 +272,12 @@ function renderPrint() {
       .sort((a, b) => (shiftOrder[a.shift] ?? 99) - (shiftOrder[b.shift] ?? 99));
 
     const isWeekend = cellIndex % 7 === 0 || cellIndex % 7 === 6;
-    const isFullOccupancy = reservations.some((item) =>
-      item.className === 'Lotação máxima' || String(item.activity).toLocaleLowerCase('pt-BR').includes('ocupação máxima')
-    );
     const classes = [
       'calendar-day',
       isWeekend ? 'calendar-weekend' : '',
       event ? 'calendar-event-day' : '',
       reservations.length ? 'calendar-occupied' : '',
-      isFullOccupancy ? 'calendar-full-occupancy' : ''
+      reservations.some(isFullOccupancy) ? 'calendar-full-occupancy' : ''
     ].filter(Boolean).join(' ');
 
     const responsible = calendarResponsible(reservations);
@@ -257,10 +293,137 @@ function renderPrint() {
     </div>`;
   }).join('');
 
-  document.querySelector('#printCalendar').innerHTML = `
-    <div class="calendar-weekdays">${weekDayHeader}</div>
-    <div class="calendar-grid">${cells}</div>
+  content.innerHTML = `
+    <div class="calendar-container">
+      <div class="calendar-weekdays">${weekDayHeader}</div>
+      <div class="calendar-grid">${cells}</div>
+    </div>
   `;
+}
+
+function reservationMatchesWeeklyPeriod(reservation, period) {
+  return reservation.period === 'completo' || reservation.period === period;
+}
+
+function groupWeeklyReservations(reservations) {
+  const groups = new Map();
+
+  reservations.forEach((reservation) => {
+    const key = [
+      reservation.teacher,
+      reservationMainText(reservation),
+      reservation.className,
+      reservation.curricularUnit,
+      reservation.period,
+      isFullOccupancy(reservation) ? 'full' : 'normal'
+    ].join('|');
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        teacher: reservation.teacher || 'Responsável não informado',
+        mainText: reservationMainText(reservation),
+        className: reservation.className || reservation.curricularUnit || '',
+        period: reservation.period,
+        fullOccupancy: isFullOccupancy(reservation),
+        dates: []
+      });
+    }
+
+    groups.get(key).dates.push(Number(reservation.date.slice(8, 10)));
+  });
+
+  return [...groups.values()].map((group) => ({
+    ...group,
+    dates: [...new Set(group.dates)].sort((a, b) => a - b)
+  }));
+}
+
+function weeklyBookingCard(group, month) {
+  const dates = group.dates.map((day) => String(day).padStart(2, '0')).join(', ');
+  const classes = `weekly-booking${group.fullOccupancy ? ' weekly-booking-full' : ''}`;
+
+  return `<div class="${classes}">
+    <div class="weekly-booking-top">
+      <strong>${escapeHtml(group.teacher)}</strong>
+      <span>${escapeHtml(dates)}/${String(month).padStart(2, '0')}</span>
+    </div>
+    <div class="weekly-booking-main">${escapeHtml(group.mainText)}</div>
+    <small>${escapeHtml(group.className)}${group.className ? ' · ' : ''}${escapeHtml(periodLabel(group.period))}</small>
+  </div>`;
+}
+
+function weeklyCell(month, environmentId, weekDay, row) {
+  const reservations = state.reservations.filter((reservation) => {
+    const reservationDate = new Date(`${reservation.date}T12:00:00Z`);
+    return Number(reservation.date.slice(5, 7)) === month &&
+      reservation.environmentId === environmentId &&
+      reservationDate.getUTCDay() === weekDay &&
+      reservation.shift === row.shift &&
+      reservationMatchesWeeklyPeriod(reservation, row.period);
+  });
+
+  const grouped = groupWeeklyReservations(reservations);
+  const classes = [
+    'weekly-cell',
+    `weekly-${row.tone}`,
+    grouped.some((group) => group.fullOccupancy) ? 'weekly-cell-full' : ''
+  ].filter(Boolean).join(' ');
+
+  return `<div class="${classes}">${grouped.length
+    ? grouped.map((group) => weeklyBookingCard(group, month)).join('')
+    : '<span class="weekly-free">Livre</span>'}</div>`;
+}
+
+function renderWeeklyPrint(month, environmentId) {
+  const sheet = document.querySelector('#printSheet');
+  const content = document.querySelector('#printContent');
+  const monthEvents = calendarEvents.filter((event) => Number(event.date.slice(5, 7)) === month);
+
+  setPrintPage('weekly');
+  sheet.className = 'print-sheet weekly-sheet';
+  document.querySelector('#printHeading').textContent = 'GRADE SEMANAL DE RESERVAS';
+
+  const header = `
+    <div class="weekly-corner">TURNO</div>
+    ${weeklyDays.map((day) => `<div class="weekly-day-heading">${day.label}</div>`).join('')}
+  `;
+
+  const rows = weeklyRows.map((row) => {
+    if (row.interval) {
+      return `
+        <div class="weekly-interval-label weekly-${row.tone}">${row.label}</div>
+        <div class="weekly-interval-bar weekly-${row.tone}">INTERVALO</div>
+      `;
+    }
+
+    return `
+      <div class="weekly-shift-label weekly-${row.tone}">
+        <strong>${row.label}</strong>
+        <small>${row.period === 'antes' ? 'Antes do intervalo' : 'Após o intervalo'}</small>
+      </div>
+      ${weeklyDays.map((day) => weeklyCell(month, environmentId, day.day, row)).join('')}
+    `;
+  }).join('');
+
+  const events = monthEvents.length
+    ? `<div class="weekly-events"><strong>Eventos do mês:</strong> ${monthEvents.map((event) => `${formatDate(event.date)} — ${escapeHtml(event.name)}`).join(' · ')}</div>`
+    : '';
+
+  content.innerHTML = `<div class="weekly-schedule">${header}${rows}</div>${events}`;
+}
+
+function renderPrint() {
+  const format = document.querySelector('#printFormat').value;
+  const month = Number(document.querySelector('#printMonth').value);
+  const environmentId = document.querySelector('#printEnvironment').value;
+
+  document.querySelector('#printTitle').textContent = `${months[month - 1]} de ${currentYear} — ${environmentName(environmentId)}`;
+
+  if (format === 'calendar') {
+    renderCalendarPrint(month, environmentId);
+  } else {
+    renderWeeklyPrint(month, environmentId);
+  }
 }
 
 function handleReservationSubmit(event) {
@@ -349,7 +512,10 @@ if (reservationForm) reservationForm.addEventListener('submit', handleReservatio
 
 document.querySelector('#reservationsTable')?.addEventListener('click', handleDelete);
 document.querySelectorAll('#filterMonth, #filterEnvironment, #filterShift').forEach((element) => element.addEventListener('change', renderReservations));
-document.querySelectorAll('#printMonth, #printEnvironment').forEach((element) => element.addEventListener('change', renderPrint));
-document.querySelector('#printButton')?.addEventListener('click', () => window.print());
+document.querySelectorAll('#printFormat, #printMonth, #printEnvironment').forEach((element) => element.addEventListener('change', renderPrint));
+document.querySelector('#printButton')?.addEventListener('click', () => {
+  renderPrint();
+  window.print();
+});
 
 bootstrapImportedData();
