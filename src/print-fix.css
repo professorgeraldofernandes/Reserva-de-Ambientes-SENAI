@@ -1,0 +1,306 @@
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 5mm;
+  }
+
+  html[data-print-format="weekly"],
+  html[data-print-format="weekly"] body {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #fff !important;
+  }
+
+  html[data-print-format="weekly"] body {
+    position: relative !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  html[data-print-format="weekly"] .container {
+    width: 287mm !important;
+    height: 200mm !important;
+    max-width: 287mm !important;
+    max-height: 200mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html[data-print-format="weekly"] .print-view {
+    display: block !important;
+    width: 287mm !important;
+    height: 200mm !important;
+    max-width: 287mm !important;
+    max-height: 200mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    break-before: avoid-page !important;
+    break-after: avoid-page !important;
+    break-inside: avoid-page !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  html[data-print-format="weekly"] .print-sheet {
+    display: grid !important;
+    grid-template-rows: 15mm 178mm 3mm !important;
+    width: 287mm !important;
+    height: 200mm !important;
+    max-width: 287mm !important;
+    max-height: 200mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+  }
+
+  html[data-print-format="weekly"] .print-header {
+    width: 287mm !important;
+    height: 15mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    overflow: hidden !important;
+  }
+
+  html[data-print-format="weekly"] .print-header p {
+    margin: 0 0 .8mm !important;
+    font-size: 7.5pt !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+  }
+
+  html[data-print-format="weekly"] .print-header h2 {
+    margin: 0 0 .8mm !important;
+    font-size: 14pt !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    color: #003b70 !important;
+    text-align: center !important;
+  }
+
+  html[data-print-format="weekly"] .print-header h3 {
+    margin: 0 !important;
+    font-size: 9.5pt !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+  }
+
+  html[data-print-format="weekly"] .print-content {
+    width: 287mm !important;
+    height: 178mm !important;
+    max-width: 287mm !important;
+    max-height: 178mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-schedule {
+    display: grid !important;
+    grid-template-columns: 24mm repeat(6, 43.833mm) !important;
+    grid-template-rows: 8mm 23mm 4mm 23mm 23mm 4mm 23mm 23mm 4mm 23mm !important;
+    width: 287mm !important;
+    height: 158mm !important;
+    min-width: 287mm !important;
+    max-width: 287mm !important;
+    min-height: 158mm !important;
+    max-height: 158mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border-top: .2mm solid #506678 !important;
+    border-left: .2mm solid #506678 !important;
+    overflow: hidden !important;
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-corner,
+  html[data-print-format="weekly"] .weekly-day-heading,
+  html[data-print-format="weekly"] .weekly-shift-label,
+  html[data-print-format="weekly"] .weekly-cell,
+  html[data-print-format="weekly"] .weekly-interval-label,
+  html[data-print-format="weekly"] .weekly-interval-bar {
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-right: .2mm solid #506678 !important;
+    border-bottom: .2mm solid #506678 !important;
+    overflow: hidden !important;
+    break-inside: avoid !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-corner,
+  html[data-print-format="weekly"] .weekly-day-heading {
+    height: 8mm !important;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    background: #005ca9 !important;
+    color: #fff !important;
+    font-size: 9pt !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-shift-label,
+  html[data-print-format="weekly"] .weekly-cell {
+    height: 23mm !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-shift-label {
+    padding: .7mm !important;
+    gap: .5mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-shift-label strong {
+    font-size: 8pt !important;
+    line-height: 1 !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-shift-label small {
+    font-size: 5pt !important;
+    line-height: 1 !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-cell {
+    padding: .65mm !important;
+    gap: .45mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-interval-label,
+  html[data-print-format="weekly"] .weekly-interval-bar {
+    height: 4mm !important;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    font-size: 6pt !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-interval-bar {
+    grid-column: span 6 !important;
+    background: #fff1aa !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-shift-label.weekly-morning,
+  html[data-print-format="weekly"] .weekly-interval-label.weekly-morning {
+    background: #d8f0ed !important;
+    border-left: 1mm solid #0b7b78 !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-shift-label.weekly-afternoon,
+  html[data-print-format="weekly"] .weekly-interval-label.weekly-afternoon {
+    background: #ffead0 !important;
+    border-left: 1mm solid #c86d00 !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-shift-label.weekly-night,
+  html[data-print-format="weekly"] .weekly-interval-label.weekly-night {
+    background: #e9e1f7 !important;
+    border-left: 1mm solid #65489a !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-cell-full {
+    background: #fff0db !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-booking {
+    padding: .5mm .6mm !important;
+    border-width: .2mm .2mm .2mm .8mm !important;
+    border-radius: .5mm !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-booking-top {
+    gap: .6mm !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-booking-top strong {
+    font-size: 6pt !important;
+    line-height: 1 !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-booking-top span {
+    font-size: 4.8pt !important;
+    line-height: 1 !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-booking-main {
+    margin-top: .3mm !important;
+    font-size: 5.5pt !important;
+    line-height: 1 !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-booking small {
+    margin-top: .2mm !important;
+    font-size: 4.5pt !important;
+    line-height: 1 !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-free {
+    font-size: 5.5pt !important;
+  }
+
+  html[data-print-format="weekly"] .weekly-events {
+    width: 287mm !important;
+    height: 6mm !important;
+    margin: 1mm 0 0 !important;
+    padding: .8mm 1.2mm !important;
+    border-radius: 0 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    font-size: 5pt !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  html[data-print-format="weekly"] .print-sheet footer {
+    width: 287mm !important;
+    height: 3mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    font-size: 4.5pt !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    overflow: hidden !important;
+  }
+}
