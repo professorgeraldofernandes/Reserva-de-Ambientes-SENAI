@@ -1,5 +1,5 @@
 const BASE_PATH = '/Reserva-de-Ambientes-SENAI/';
-const CACHE_NAME = 'reservas-senai-v6';
+const CACHE_NAME = 'reservas-senai-v7';
 const APP_SHELL = [
   BASE_PATH,
   `${BASE_PATH}index.html`,
